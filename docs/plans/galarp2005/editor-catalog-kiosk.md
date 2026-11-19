@@ -21,6 +21,7 @@ Finish the editor integration started in PR #16: load the build-time `/patterns/
 - `services/web/src/pages/create/[slug].astro`
 - `services/web/src/pages/kiosk.astro`
 - `docs/plans/galarp2005/editor-catalog-kiosk.md`
+- `services/web/tests/e2e/editor.spec.ts` — browser-level catalog/fallback tests
 
 ## Verification
 
@@ -30,7 +31,14 @@ The student previously confirmed locally that the catalog was generated, both `/
 - `pnpm --filter @mondrian/web build`: 28 pages built; pattern and link checks passed.
 - Earlier `pnpm check` encountered a Windows environment issue running `bash`; the student later reported conformance and Python checks passed, but their complete logs were not captured here.
 
-Before marking the PR ready, repeat the full checks on the branch being reviewed and add targeted component/browser tests for successful catalog loading and fallback behavior. A successful HTTP 200 alone does not prove that the SVG has been replaced.
+A Playwright browser test has now been added to verify that `/create/` and `/kiosk/` render **the JSON response** (by modifying one item identifier in an intercepted response), and that a 404 preserves the initial SVG with a user-visible error.
+
+**Test status:** test code added, **not executed in the connected GitHub environment**. The student must run it in a browser-capable environment before claiming it passed. Use:
+```sh
+pnpm --filter @mondrian/web build
+pnpm --filter @mondrian/web test:e2e -- editor.spec.ts
+```
+The full `pnpm check`, `uv run pytest` and any cross-lane human review should also be confirmed on the submitted branch. A successful HTTP 200 alone does not prove that the SVG has been replaced.
 
 ## AI Review Log
 
