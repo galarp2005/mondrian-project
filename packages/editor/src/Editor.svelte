@@ -1,12 +1,42 @@
 <script>
+  import { onMount } from "svelte";
   import { deriveRenderPlan, renderSvg } from "@mondrian/matrix";
 
-  // Astro passes us one measured work from its content collection.
-  let { work } = $props();
+  // Astro passes the selected work and the URL of its generated catalog JSON.
+  let { work, catalogUrl } = $props();
 
-  // The geometry and SVG generation belong to matrix, not the editor UI.
-  let svg = $derived(renderSvg(deriveRenderPlan(work)));
+  // Show the measured SVG immediately; replace it when the catalog arrives.
+  let svg = $state(renderSvg(deriveRenderPlan(work)));
+  let error = $state("");
   let ratio = $derived(work.canvas.width / work.canvas.height);
+
+  onMount(() => {
+    let mounted = true;
+
+    async function cargarCatalogo() {
+      try {
+        const response = await fetch(catalogUrl);
+        if (!response.ok) {
+          throw new Error(`Catalog request failed (HTTP ${response.status})`);
+        }
+
+        const plan = await response.json();
+        if (!plan || !Array.isArray(plan.items)) {
+          throw new Error("Catalog JSON is not a valid render plan");
+        }
+
+        if (mounted) svg = renderSvg(plan);
+      } catch (err) {
+        if (mounted) {
+          console.error("Error al cargar el catalogo:", err);
+          error = "No se pudo cargar el catalogo; se muestra la obra original.";
+        }
+      }
+    }
+
+    void cargarCatalogo();
+    return () => { mounted = false; };
+  });
 </script>
 
 <section class="editor-study">
@@ -21,6 +51,9 @@
       {@html svg}
     </div>
   </div>
+  {#if error}
+    <p class="editor-study__error">{error}</p>
+  {/if}
 </section>
 
 <style>
@@ -70,8 +103,8 @@
     height: 100%;
   }
 
-  .editor-study__note {
+  .editor-study__error {
     margin: 0;
-    max-width: 44rem;
+    font-size: 0.9rem;
   }
 </style>
