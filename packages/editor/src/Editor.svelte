@@ -9,29 +9,17 @@
   let ratio = $derived(work.canvas.width / work.canvas.height);
 </script>
 
-<section class="editor-study" aria-labelledby="editor-title">
+<section class="editor-study">
   <header class="editor-study__header">
-    <p class="editor-study__eyebrow">Editor · first study</p>
-    <h1 id="editor-title">{work.title}</h1>
-    <p>Measured SVG study after Mondrian · {work.year}</p>
+    <h1>{work.title}</h1>
+    <p>Obra de {work.year}</p>
   </header>
 
   <div class="editor-study__stage">
-    <div
-      class="editor-study__painting"
-      style:aspect-ratio={ratio}
-      role="group"
-      aria-label="Study of {work.title}"
-      data-editor-canvas
-    >
+    <div class="editor-study__painting" style:aspect-ratio={ratio}>
       {@html svg}
     </div>
   </div>
-
-  <p class="editor-study__note">
-    This is the first editor milestone: the original composition rendered with
-    shared matrix geometry. Controls will arrive in separate tasks.
-  </p>
 </section>
 
 <style>
