@@ -20,7 +20,7 @@ const works = await getCollection("works");
   </article>
   <div class="card-grid">
     {
-      works.map((entry) => {
+      works.map((entry: { data: WorkDoc }) => {
         const work = entry.data as WorkDoc;
         return (
           <a class="work-card" href={withBase(`/gallery/${work.id}/`, base)}>

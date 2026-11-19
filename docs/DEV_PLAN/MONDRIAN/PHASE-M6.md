@@ -42,8 +42,7 @@ Steal the **master idea**, not the showreel stack
 - Format UI: `original`, `1:1`, `5:4`, `4:5`, `16:9`, `9:16` (+ `custom`
   after drag). Re-maximise when surface changes.
 - Catalog / texture: load `/patterns/<id>.json` — no LAN API. Variations:
-  original, mirror H/V, rotate 180°, invert rank, complement, reciprocal,
-  equalize, invert contrast.
+  original, mirror H/V, rotate 180°, invert contrast (weight remaps when B1-T4 ships).
 - Pedagogical extras: hue; palette inversion; line-weight; undo, reset,
   press-and-hold compare; **plane clip chips** (rect/circle/triangle).
 - Pointer capture on frame corners; ≥44 px targets. Format chips **and**

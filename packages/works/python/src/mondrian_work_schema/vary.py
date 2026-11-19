@@ -17,7 +17,12 @@ def vary(work: dict[str, Any], variation_id: str) -> dict[str, Any]:
         return _mirror(_mirror(work, "x"), "y")
     if variation_id == "invert-contrast":
         return _invert_contrast(work)
-    raise ValueError(f"unknown or omitted MVP variation: {variation_id}")
+    if variation_id in {"invert-rank", "complement", "reciprocal", "equalize"}:
+        raise ValueError(
+            f"weight variation {variation_id!r} omitted from MVP catalog "
+            "(D-21 / M2 F3); implement closed-form remaps before re-enabling"
+        )
+    raise ValueError(f"unknown variation_id {variation_id!r}")
 
 
 def _mirror(work: dict[str, Any], axis: str) -> dict[str, Any]:

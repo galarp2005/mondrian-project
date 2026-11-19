@@ -16,8 +16,15 @@ export function vary(work, variationId) {
       return mirror(mirror(work, "x"), "y");
     case "invert-contrast":
       return invertContrast(work);
+    case "invert-rank":
+    case "complement":
+    case "reciprocal":
+    case "equalize":
+      throw new Error(
+        `weight variation "${variationId}" omitted from MVP (D-21 / M2 F3)`,
+      );
     default:
-      throw new Error(`unknown or omitted MVP variation: ${variationId}`);
+      throw new Error(`unknown variationId "${variationId}"`);
   }
 }
 

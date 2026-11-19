@@ -9,7 +9,7 @@ import { withBase } from "../../lib/url";
 
 export async function getStaticPaths() {
   const works = await getCollection("works");
-  return works.map((entry) => ({
+  return works.map((entry: { data: WorkDoc }) => ({
     params: { slug: entry.data.id },
     props: { work: entry.data as WorkDoc },
   }));

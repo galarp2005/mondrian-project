@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# M2 conformance: Ajv | JS semantic | zod | pydantic + plan equality
+# M2 conformance: Ajv | JS semantic | zod | pydantic + plan equality + catalog
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -99,17 +99,18 @@ NODE
 
 # pydantic + plan equality
 uv run python <<'PY'
+import hashlib
 import json
 from pathlib import Path
 import yaml
 from mondrian_work_schema import Work, derive_render_plan, write_catalog
+from pydantic import ValidationError
 
 root = Path('.').resolve()
 valid = yaml.safe_load((root/'packages/works/fixtures/valid.yml').read_text())
 Work.model_validate(valid)
 print('valid.yml: py=ok')
 
-from pydantic import ValidationError
 struct_dir = root/'packages/works/fixtures/broken/structural'
 for f in sorted(struct_dir.glob('*.yml')):
     doc = yaml.safe_load(f.read_text())
@@ -163,7 +164,35 @@ if not close(js_plan, py_plan):
 print('valid.yml: plan=equal')
 
 out = root/'services/web/public/patterns'
+out.mkdir(parents=True, exist_ok=True)
+for stale in list(out.glob('*.json')) + list(out.glob('*.svg')):
+    stale.unlink()
 paths = write_catalog(valid, out)
 print(f'catalog wrote {len(paths)} files -> {out}')
+if len(paths) != 10:
+    print(f'UNEXPECTED catalog count {len(paths)} (want 10 MVP artefacts)')
+    raise SystemExit(1)
+
+# No identity clones among emitted variation JSON (F3 guard).
+hashes = {}
+for p in paths:
+    if p.suffix != '.json':
+        continue
+    digest = hashlib.sha256(p.read_bytes()).hexdigest()
+    if digest in hashes:
+        print(f'catalog identity clone: {hashes[digest]} == {p.name}')
+        raise SystemExit(1)
+    hashes[digest] = p.name
+
+banned = (
+    list(out.glob('*--invert-rank.*'))
+    + list(out.glob('*--complement.*'))
+    + list(out.glob('*--reciprocal.*'))
+    + list(out.glob('*--equalize.*'))
+)
+if banned:
+    print('banned weight stub artefacts present:', [b.name for b in banned])
+    raise SystemExit(1)
+
 print('conformance: OK')
 PY

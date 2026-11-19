@@ -9,9 +9,10 @@ from typing import Any
 from .derive import derive_render_plan
 from .vary import vary
 
-# MVP catalog: geometric + invert-contrast only. Weight remaps
-# (invert-rank/complement/reciprocal/equalize) omitted until closed-form
-# area rewrite is documented (PHASE-M2 prompt: no invented proportions).
+# MVP catalog (M2 triage F3 / D-21): geometric + invert-contrast only.
+# Weight remaps (invert-rank / complement / reciprocal / equalize) stay omitted
+# until a closed-form area-share rewrite is documented (no invented proportions).
+# Seat B1-T4 owns that work.
 VARIATIONS = [
     "original",
     "mirror-h",

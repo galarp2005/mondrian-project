@@ -15,7 +15,9 @@ const n4 = (v) => +v.toFixed(3);
  * @param {number} o.size   output side in user units (viewBox 0 0 size size)
  * @param {number} o.depth  recursion depth for tiles whose side ≥ splitAt
  * @param {number} o.splitAt  minimum side (user units) for a tile to open into the whole
- * @param {string} o.drawOn  "" | "css": adds stroke-dash classes for a CSS draw-on reveal
+ * @param {number} [o.seed]  orientation hash for nested white tiles
+ * @param {number} [o.orientation]  starting tile orientation 0–7
+ * @param {string} [o.drawOn]  "" | "css": adds stroke-dash classes for a CSS draw-on reveal
  */
 export function squaredSquareSVG({ size = 1120, depth = 1, splitAt = 260, palette = PALETTES.neoplastix, roles, seed = 7, orientation = 0, lineRatio = 0.03, lineMin = 0.8, lineMax = 22, drawOn = "", title = "" } = {}) {
   const unit = normalise(DUIJVESTIJN_21);
