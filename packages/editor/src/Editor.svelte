@@ -11,6 +11,7 @@
 
 <section class="editor-study">
   <header class="editor-study__header">
+    <p class="editor-study__eyebrow">Editor · first study</p>
     <h1>{work.title}</h1>
     <p>Obra de {work.year}</p>
   </header>
