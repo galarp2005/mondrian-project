@@ -1,8 +1,8 @@
 # Seat 6 — First Svelte editor study (exploratory plan)
 
-**Owner:** `galarp2005` · **Scope:** U6-T1 · **Status:** prototype, not yet a PR.
+**Owner:** `galarp2005` · **Scope:** U6-T1 · **Status:** first prototype submitted for human review.
 
-> The instructor has not opened an editor issue yet. This prototype lives in `lane/galarp2005-editor` for learning and review. Before submission, create a fresh `lane/galarp2005-issue-<n>-<slug>` branch from up-to-date `main`, use an agreed issue number, and follow `CONTRIBUTING.md`.
+> U6-T1 is the instructor-assigned task identifier. There is not yet a numbered GitHub issue for it in the upstream repository, and the linked account cannot create one there. This submission uses the descriptive branch `lane/galarp2005-u6-t1-editor-svg`. The missing issue-based branch suffix is disclosed for human review rather than claiming full naming compliance.
 
 ## Source instructions before each change
 
@@ -51,6 +51,6 @@ Deferring these parts does **not** remove them from the overall Neoplastix MVP; 
 
 ## Assisted work review
 
-- Assistant proposed initial architecture / code. **ACCEPT pending human code and browser review.**
+- Assistant proposed initial architecture / code. **ACCEPT for the initial prototype, with fresh human code and browser review still pending.**
 - Decision to avoid duplicate geometry in Svelte: **ACCEPT**. The existing `matrix` package owns calculations.
 - Do not claim a human test, approval or merge until completed by a person.
