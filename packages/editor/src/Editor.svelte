@@ -70,8 +70,4 @@
     height: 100%;
   }
 
-  .editor-study__note {
-    margin: 0;
-    max-width: 44rem;
-  }
 </style>
