@@ -1,6 +1,6 @@
 # Seat 6 — First Svelte editor study (exploratory plan)
 
-**Owner:** `galarp2005` · **Scope:** U6-T1 · **Status:** first prototype submitted for human review.
+**Owner:** `galarp2005` · **Scope:** U6-T1 · **Status:** prototype implemented and checked; replacement PR pending human review.
 
 > U6-T1 is the instructor-assigned task identifier. There is not yet a numbered GitHub issue for it in the upstream repository, and the linked account cannot create one there. This submission uses the descriptive branch `lane/galarp2005-u6-t1-editor-svg`. The missing issue-based branch suffix is disclosed for human review rather than claiming full naming compliance.
 
@@ -33,6 +33,18 @@ This separation keeps the first PR focused on getting the component connected an
 - `packages/editor/package.json` exposes `./Editor.svelte` directly; Astro imports `@mondrian/editor/Editor.svelte`. The unused `packages/editor/src/index.js` barrel was removed; the original `Probe.svelte` remains available via its direct export.
 - No changes to `packages/matrix`, `work.yml`, `services/api` or Seat 7 export controls.
 
+## Corrections incorporated after PR #16 review
+
+Rubén's initial review identified three required follow-ups plus smaller cleanup:
+
+1. **Restore the gallery navigation** removed from the original Astro placeholder: the editor page keeps both **View SVG study** (for the selected work) and **Gallery** (for the index). Links use `withBase()` so the site's base path remains supported.
+2. **Keep recipe query parameters** when navigating from `/create/<slug>/` to `/gallery/<slug>/`. The Astro page retains `Astro.url.search` and `galleryHref`; because routes are statically generated, a small browser script copies `window.location.search` into the study link.
+3. **Sync with upstream `main`** and repeat the project checks before resubmission. The new branch contains the upstream changes and `pnpm check` completed successfully in [GitHub Actions](https://github.com/galarp2005/mondrian-project/actions/runs/45182610047).
+4. **Remove dead CSS**: delete the unused `.editor-study__note` rule from `Editor.svelte`.
+5. **Document the package export change**: removing `packages/editor/src/index.js` also removes the package-root `"."` export; the actual consumer uses the explicit `@mondrian/editor/Editor.svelte` subpath.
+
+**Open process point:** `U6-T1` is the assigned task ID, but the branch `lane/galarp2005-u6-t1-editor-svg` has no numbered GitHub issue. Instructor confirmation of this branch-naming exception is still required, as is a cross-lane human code review.
+
 ## Deliberately out of scope
 
 - **Final graphic / visual design**: polished editor layout, typography, color treatment, responsive presentation, and the visual design of controls. These are deferred to a later design/UI task or PR; the basic styles in this prototype are only a functional placeholder.
@@ -43,14 +55,14 @@ Deferring these parts does **not** remove them from the overall Neoplastix MVP; 
 
 ## Verification (human check required)
 
-1. `pnpm check` succeeds from repo root.
-2. `pnpm develop` serves `/create/kunsthaus-1930-rbby/`; the heading and inline SVG are visible.
-3. The SVG has measured planes and black lines; no console/runtime errors.
-4. `/gallery/` stays functional; `/about/` does not mount a Svelte island.
-5. Confirm only the intended files changed with `git status` and `git diff`.
+- **PASS — automated:** `pnpm check` succeeded on the updated branch in [GitHub Actions](https://github.com/galarp2005/mondrian-project/actions/runs/45182610047) using Node 24.22.1 and pnpm 10.30.0.
+- **PASS — manual browser smoke:** `/create/kunsthaus-1930-rbby/` displayed the heading and measured SVG; Chrome's Console showed no error messages.
+- **PASS — manual navigation:** **View SVG study** opened the matching work; a link opened with `?theta=42&format=square` preserved that query, and the `theta` colour rotation behaved as expected.
+- **PASS — manual navigation:** **Gallery** opened the gallery index, showing the single currently measured work.
+- **Still to verify separately:** `/about/` contains no editor island; cross-lane human code review and approval; final PR file list. These are not represented as completed.
 
 ## Assisted work review
 
-- Assistant proposed initial architecture / code. **ACCEPT for the initial prototype, with fresh human code and browser review still pending.**
+- Assistant proposed initial architecture / code. **ACCEPT for the initial prototype; manual browser smoke check is complete, but cross-lane human code review and approval remain pending.**
 - Decision to avoid duplicate geometry in Svelte: **ACCEPT**. The existing `matrix` package owns calculations.
 - Do not claim a human test, approval or merge until completed by a person.
