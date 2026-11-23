@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import ShellLayout from "../../layouts/ShellLayout.astro";
 import Editor from "@mondrian/editor/Editor.svelte";
 import { swatchCssVars } from "../../lib/work-plan";
+import { withBase } from "../../lib/url";
 import type { WorkDoc } from "../../lib/work-plan";
 
 export async function getStaticPaths() {
@@ -18,9 +19,28 @@ interface Props {
 }
 
 const { work } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const q = Astro.url.search;
+const galleryHref = `${withBase(`/gallery/${work.id}/`, base)}${q}`;
 ---
 <ShellLayout title={`Create ${work.title} — Neoplastix`} current="home" noindex>
   <div style={swatchCssVars(work)}>
     <Editor work={work} client:load />
+    <nav class="prose" aria-label="Editor navigation">
+      <p class="btn-row">
+        <a class="btn btn--primary" href={galleryHref} data-recipe-gallery-link>View SVG study</a>
+        <a class="btn btn--ghost" href={withBase("/gallery/", base)}>Gallery</a>
+      </p>
+    </nav>
   </div>
 </ShellLayout>
+
+<script>
+  // Statically generated routes need the browser query string for recipe links.
+  const studyLink = document.querySelector<HTMLAnchorElement>("[data-recipe-gallery-link]");
+  if (studyLink) {
+    const studyUrl = new URL(studyLink.href);
+    studyUrl.search = window.location.search;
+    studyLink.href = studyUrl.href;
+  }
+</script>
