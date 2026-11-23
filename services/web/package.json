@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/assert-favicon-base.mjs && node ../../scripts/assert-works-count.mjs && node scripts/assert-dist-links.mjs",
+    "prebuild": "node scripts/assert-works-collection.mjs && pnpm --dir ../.. run catalog",
+    "build": "astro build && node scripts/assert-favicon-base.mjs && node scripts/assert-patterns.mjs && node ../../scripts/assert-works-count.mjs && node scripts/assert-dist-links.mjs",
+    "check": "astro check",
     "preview": "astro preview",
     "test": "vitest run",
     "test:e2e": "pnpm exec playwright test",
@@ -27,6 +29,7 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.6",
     "@playwright/test": "1.56.1",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"

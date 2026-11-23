@@ -14,7 +14,9 @@
     "format": "prettier --write .",
     "develop": "pnpm --filter @mondrian/web run dev",
     "favicon:build": "node scripts/build-favicon-family.mjs",
-    "check": "pnpm run lint && pnpm run test && pnpm run build"
+    "catalog": "uv run python scripts/emit_catalog.py",
+    "conformance": "bash scripts/conformance.sh",
+    "check": "pnpm run catalog && pnpm run lint && pnpm run test && pnpm run build && pnpm run conformance"
   },
   "devDependencies": {
     "ajv": "^8.20.0",

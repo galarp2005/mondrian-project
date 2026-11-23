@@ -9,10 +9,17 @@ import NeoplasticLanding from "../../../components/neoplastic/NeoplasticLanding.
 import art from "@mondrian/neoplastic/data/mondrian-art.json";
 
 const ROLES = ["red", "white", "blue", "white", "yellow", "white", "black", "white", "white", "white", "white", "white"];
-const steps = [3, 4, 5, 6, 7, 8].flatMap((n) => art.map[n].solutions.slice(0, n >= 6 ? 2 : 1).map((s) => {
-  const ranked = [...s].sort((a, b) => b.w * b.h - a.w * a.h);
-  return { n, defect: art.map[n].defect, rects: ranked.map((r, k) => ({ ...r, role: ROLES[k] || "white" })) };
-}));
+const steps = ([3, 4, 5, 6, 7, 8] as const).flatMap((n) => {
+  const bucket = art.map[n];
+  return bucket.solutions.slice(0, n >= 6 ? 2 : 1).map((s) => {
+    const ranked = [...s].sort((a, b) => b.w * b.h - a.w * a.h);
+    return {
+      n,
+      defect: bucket.defect,
+      rects: ranked.map((r, k) => ({ ...r, role: ROLES[k] || "white" })),
+    };
+  });
+});
 const pool = Math.max(...steps.map((s) => s.rects.length));
 const first = steps[0];
 ---

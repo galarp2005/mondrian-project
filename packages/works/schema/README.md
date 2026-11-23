@@ -55,10 +55,17 @@ Non-chromatic roles never rotate with `--theta`. Lines are black overlays
 
 ## Catalog variations (MVP)
 
-Shipped: `original`, `mirror-h`, `mirror-v`, `rotate-180`, `invert-contrast`.
+| Id | Effect | Where |
+| --- | --- | --- |
+| `original` | Measured work | catalog |
+| `mirror-h` / `mirror-v` | Reflect partition | JS + Python |
+| `rotate-180` | Both mirrors | JS + Python |
+| `invert-contrast` | Role flip (red↔blue, black↔white); edges unchanged | JS + Python |
 
-Omitted until a closed-form area rewrite is documented (no invented proportions):
-`invert-rank`, `complement`, `reciprocal`, `equalize`.
+**Deferred (B1-T4):** `invert-rank`, `complement`, `reciprocal`, `equalize` —
+closed-form remaps of measured visible-cell area shares only. D-21 forbids
+shipping identity stubs. Do not re-enable in `catalog.VARIATIONS` until formulas
+are written here and conformance proves each artefact differs from `original`.
 
 ## Out of scope
 
