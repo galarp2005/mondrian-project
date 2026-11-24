@@ -43,8 +43,9 @@
   function chooseVariation(id) {
     if (drag) return;
     variationId = normalizeVariation(id);
+    editedColour = colourState(variedWork, colour);
     const url = new URL(window.location.href);
-    url.search = variationSearch(url.search, variationId);
+    url.search = colourSearch(variationSearch(url.search, variationId), editedColour);
     window.history.replaceState(window.history.state, "", url);
     syncStudyLink(url.search);
   }
@@ -231,7 +232,7 @@
               <button type="button" aria-pressed={colour.paletteMode === "inverted"} onclick={toggleInversion}>Invert palette</button>
               <label class="range-preview">
                 Line weight · {colour.lineWeightScale.toFixed(2)}×
-                <input type="range" min="0.25" max={maxWeight} step="any" value={colour.lineWeightScale}
+                <input type="range" min="0.25" max={maxWeight} step="0.01" value={colour.lineWeightScale}
                   oninput={(event) => changeColour({ lineWeightScale: Number(event.currentTarget.value) })} />
               </label>
               <div class="options chips" role="group" aria-label="Line weight presets">
