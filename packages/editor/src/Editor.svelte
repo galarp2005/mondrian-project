@@ -21,26 +21,28 @@
 <!-- Named sections associate their visible headings with assistive technology. -->
 <section class="editor-study" aria-labelledby="editor-title">
   <header class="editor-study__header">
-    <h1 id="editor-title">Create your composition</h1>
-    <p>{work.title} · {work.year}</p>
-    <p class="notice">Layout preview — editing and output controls are not available yet.</p>
+    <div class="editor-title-block">
+      <h1 id="editor-title">Create your composition</h1>
+      <p>{work.title} · {work.year}</p>
+      <p class="notice">Layout preview — editing and output controls are not available yet.</p>
+    </div>
+    <div class="preview-heading">
+      <!-- History controls remain disabled until their behavior is implemented. -->
+      <div class="actions">
+        {#each ["Undo", "Reset", "Hold to compare"] as action}
+          <button type="button" disabled>{action}</button>
+        {/each}
+      </div>
+      <nav class="actions study-links" aria-label="Editor navigation">
+        <a href={galleryHref} data-recipe-gallery-link>View SVG study</a>
+        <a href={galleryIndexHref}>Gallery</a>
+      </nav>
+    </div>
   </header>
   <!-- Keep the preview first in DOM order for the narrow-screen layout. -->
   <div class="workspace">
     <section class="preview" aria-labelledby="preview-title">
-      <div class="preview-heading">
-        <h2 id="preview-title" class="visually-hidden">Your composition</h2>
-        <!-- History controls remain disabled until their behavior is implemented. -->
-        <div class="actions">
-          {#each ["Undo", "Reset", "Hold to compare"] as action}
-            <button type="button" disabled>{action}</button>
-          {/each}
-        </div>
-        <nav class="actions study-links" aria-label="Editor navigation">
-          <a href={galleryHref} data-recipe-gallery-link>View SVG study</a>
-          <a href={galleryIndexHref}>Gallery</a>
-        </nav>
-      </div>
+      <h2 id="preview-title" class="visually-hidden">Your composition</h2>
       <!-- Stage centers the painting; the custom property passes its ratio to CSS. -->
       <div class="editor-study__stage">
         <div class="editor-study__painting" style:--work-ratio={ratio}>
@@ -119,7 +121,8 @@
     line-height: var(--nx-leading-normal);
   }
   h1, h2, p { margin: 0; }
-  .editor-study__header { display: grid; gap: var(--nx-space-1); }
+  .editor-study__header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--nx-space-2); }
+  .editor-title-block { display: grid; gap: var(--nx-space-1); min-width: 0; }
   h1 {
     font-family: var(--nx-font-headline);
     font-size: var(--nx-text-xl);
@@ -133,13 +136,13 @@
   /* Mobile first: keep the artwork above the tools. */
   .workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--nx-space-3); min-height: 0; }
   .preview, .controls, .output { min-width: 0; min-height: 0; }
-  .preview { display: grid; gap: var(--nx-space-2); grid-template-rows: auto minmax(0, 1fr); }
+  .preview { display: grid; gap: var(--nx-space-2); grid-template-rows: minmax(0, 1fr); }
   .preview-heading, .output {
     display: flex; flex-wrap: wrap; align-items: center; gap: var(--nx-space-1);
     padding: var(--nx-space-1); border: var(--nx-stroke-armature) solid var(--nx-color-muted);
     background: var(--nx-color-paper);
   }
-  .preview-heading { justify-content: space-between; }
+  .preview-heading { justify-content: flex-end; border: 0; padding: 0; background: transparent; min-width: 0; }
   .controls {
     display: grid; align-content: start; gap: var(--nx-space-2);
     padding: var(--nx-space-3);
