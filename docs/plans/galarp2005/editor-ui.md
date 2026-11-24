@@ -12,6 +12,9 @@ Reuse ShellLayout/SiteNav exactly, including all existing links; no language swi
 
 Control inventory: texture/catalog, surface presets (Seat 7), format including custom, variations, hue, palette inversion, line weight, plane clip lab, corner resize, undo/reset/hold compare, share link/QR, SVG/PNG/HTML/CSV export and print/crop marks/calibration (Seat 7). Future controls are explicitly unavailable; no fake saved status, fake selected surface or fake interactive handles. No internal handles. Native details are functional disclosure only. Real print silhouette and surface dimensions await Seat 7 integration.
 
+## Visual refinement
+The author reviewed two desktop screenshots and requested a single-screen workspace with a cleaner sidebar. The second iteration moved the study/gallery links into the toolbar, compacted the output controls and fitted the Create route to the viewport without changing the shared shell files. The next refinement starts all tool categories collapsed, narrows the sidebar and reduces toolbar and stage padding while retaining 44px touch targets. Desktop keeps internal sidebar scrolling when needed; mobile and short viewports retain normal page scrolling. The original artwork and future disabled actions remain unchanged. Latest visual and keyboard checks remain pending.
+
 ## Verification checklist
 - [ ] pnpm check on final branch
 - [ ] Desktop/tablet/mobile browser visual QA, including narrow viewport, keyboard, focus, touch targets and dark scheme
