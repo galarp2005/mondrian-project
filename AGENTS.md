@@ -37,6 +37,16 @@ BASE=/ SITE=https://neoplastix.crea-comm.net pnpm --filter @mondrian/web build
 - Approve or merge as an assistant
 - Copy `_private/` correspondence into this repo
 
+## PR review comments
+
+Every agent-written PR comment (triage, peer review, `make review-pr POST=1`) follows the
+[comment contract](docs/guides/reviewing-cohort-prs.md#comment-contract):
+
+- **Rationale** for every point, strengths included: what it is and why it matters.
+- **Evidence** for every fix: the file and line, and how you verified it.
+- **Git steps** for the author's real case, each command with its _why_: upstream remote, `fetch` and `rebase`, verify, commit with explicit paths, `push --force-with-lease`, PR-body checklist.
+- **Every command checked** against the repo before posting, and none that touches files outside the author's lane.
+
 ## Lanes
 
 See `CONTRIBUTING.md` and `.github/CODEOWNERS`.
