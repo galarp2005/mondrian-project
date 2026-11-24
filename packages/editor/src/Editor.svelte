@@ -51,44 +51,38 @@
     </section>
     <aside class="controls" aria-labelledby="controls-title">
       <h2 id="controls-title">Composition tools</h2>
-      <!-- Native disclosure elements support mouse and keyboard without extra JS. -->
-      <div class="tool-group">
-        <label for="texture">01 / Texture</label>
-        <select id="texture" disabled><option>{work.title}</option></select>
-      </div>
-      <!-- Generate one disclosure per category and one button per option. -->
+      <!-- All categories start closed; native disclosure works with keyboard and mouse. -->
+      <details>
+        <summary>01 / Texture</summary>
+        <div class="group-content">
+          <p class="notice">Current source</p>
+          <label class="visually-hidden" for="texture">Texture</label>
+          <select id="texture" disabled><option>{work.title}</option></select>
+        </div>
+      </details>
       {#each groups as group, i}
-        {#if group.title === "Surface"}
-          <div class="tool-group">
-            <label for="surface">02 / Surface</label>
-            <select id="surface" disabled>
-              <option>Surface not yet available</option>
-              {#each group.options as option}<option>{option}</option>{/each}
-            </select>
-          </div>
-        {:else if group.title === "Format" || group.title === "Variations"}
-          <div class="tool-group">
-            <h3>0{i + 2} / {group.title}</h3>
-            <div class="options chips">
-              {#each group.options as option}
-                <button type="button" disabled>{option}</button>
-              {/each}
-            </div>
-          </div>
-        {:else}
-          <details>
-            <summary>0{i + 2} / {group.title}</summary>
-            <div class="group-content options">
-              {#each group.options as option}
-                {#if option === "Hue" || option === "Line weight"}
-                  <label class="range-preview">{option}<input type="range" disabled /></label>
-                {:else}
+        <details>
+          <summary>0{i + 2} / {group.title}</summary>
+          <div class="group-content">
+            {#if group.title === "Surface"}
+              <div class="options">
+                {#each group.options as option}
                   <button type="button" disabled>{option}</button>
-                {/if}
-              {/each}
-            </div>
-          </details>
-        {/if}
+                {/each}
+              </div>
+            {:else}
+              <div class="options" class:chips={group.title === "Format" || group.title === "Variations"}>
+                {#each group.options as option}
+                  {#if option === "Hue" || option === "Line weight"}
+                    <label class="range-preview">{option}<input type="range" disabled /></label>
+                  {:else}
+                    <button type="button" disabled>{option}</button>
+                  {/if}
+                {/each}
+              </div>
+            {/if}
+          </div>
+        </details>
       {/each}
     </aside>
     <!-- Reserve space for sharing, export and print; Seat 7 owns output integration. -->
@@ -124,7 +118,7 @@
     color: var(--nx-color-ink);
     line-height: var(--nx-leading-normal);
   }
-  h1, h2, h3, p { margin: 0; }
+  h1, h2, p { margin: 0; }
   .editor-study__header { display: grid; gap: var(--nx-space-1); }
   h1 {
     font-family: var(--nx-font-headline);
@@ -133,7 +127,7 @@
     letter-spacing: var(--nx-tracking-display);
   }
   h2 { font: 600 var(--nx-text-md)/var(--nx-leading-tight) var(--nx-font-subhead); }
-  h3, label, summary { font: 600 var(--nx-text-sm)/var(--nx-leading-normal) var(--nx-font-subhead); }
+  label, summary { font: 600 var(--nx-text-sm)/var(--nx-leading-normal) var(--nx-font-subhead); }
   .notice { font: var(--nx-text-xs)/var(--nx-leading-normal) var(--nx-font-caption); color: var(--nx-color-muted); }
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* Mobile first: keep the artwork above the tools. */
@@ -141,8 +135,8 @@
   .preview, .controls, .output { min-width: 0; min-height: 0; }
   .preview { display: grid; gap: var(--nx-space-2); grid-template-rows: auto minmax(0, 1fr); }
   .preview-heading, .output {
-    display: flex; flex-wrap: wrap; align-items: center; gap: var(--nx-space-2);
-    padding: var(--nx-space-2); border: var(--nx-stroke-armature) solid var(--nx-color-muted);
+    display: flex; flex-wrap: wrap; align-items: center; gap: var(--nx-space-1);
+    padding: var(--nx-space-1); border: var(--nx-stroke-armature) solid var(--nx-color-muted);
     background: var(--nx-color-paper);
   }
   .preview-heading { justify-content: space-between; }
@@ -152,7 +146,6 @@
     border: var(--nx-stroke-armature) solid var(--nx-color-muted);
     background: var(--nx-color-paper);
   }
-  .tool-group { display: grid; gap: var(--nx-space-1); padding-block: var(--nx-space-1); border-top: var(--nx-stroke-armature) solid var(--nx-color-muted); }
   /* Size the SVG within both axes of the available stage. */
   .editor-study__stage {
     display: grid; place-items: center;
@@ -162,7 +155,7 @@
     container-type: size;
   }
   .editor-study__painting {
-    width: min(100%, 34rem, calc(100cqh * var(--work-ratio)));
+    width: min(100%, 40rem, calc(100cqh * var(--work-ratio)));
     aspect-ratio: var(--work-ratio);
     overflow: hidden;
     outline: var(--nx-stroke-armature) solid var(--nx-color-muted);
@@ -172,9 +165,10 @@
   details { border-top: var(--nx-stroke-armature) solid var(--nx-color-muted); }
   summary { box-sizing: border-box; min-height: var(--nx-touch-min); padding: var(--nx-space-2); cursor: pointer; }
   summary:focus-visible, a:focus-visible { outline: 2px solid var(--nx-color-focus); outline-offset: 2px; }
-  .group-content { padding-bottom: var(--nx-space-2); }
+  .group-content { display: grid; gap: var(--nx-space-2); padding: 0 var(--nx-space-2) var(--nx-space-2); }
+  .group-content select { width: 100%; min-width: 0; }
   .actions, .options { display: flex; flex-wrap: wrap; gap: var(--nx-space-1); }
-  .chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   button, select, .study-links a {
     box-sizing: border-box;
     min-height: var(--nx-touch-min); min-width: var(--nx-touch-min); max-width: 100%;
@@ -184,7 +178,7 @@
     background: var(--nx-color-canvas); color: var(--nx-color-muted);
     font: inherit; font-size: var(--nx-text-sm); overflow-wrap: anywhere;
   }
-  .study-links a { display: inline-flex; align-items: center; color: var(--nx-color-ink); background: transparent; border-color: transparent; text-decoration: underline; }
+  .study-links a { display: inline-flex; align-items: center; color: var(--nx-color-muted); background: transparent; border-color: transparent; text-decoration: underline; }
   button:disabled, select:disabled { cursor: not-allowed; opacity: 1; }
   .range-preview { display: grid; width: 100%; }
   .range-preview input { min-height: var(--nx-touch-min); width: 100%; margin: 0; accent-color: var(--nx-color-ink); }
@@ -195,13 +189,13 @@
   @media (min-width: 52rem) and (min-height: 35rem) {
     .editor-study { height: 100%; grid-template-rows: auto minmax(0, 1fr); }
     .workspace {
-      grid-template-columns: minmax(16rem, 1fr) minmax(0, 2fr);
+      grid-template-columns: minmax(15rem, 1fr) minmax(0, 3fr);
       grid-template-rows: minmax(0, 1fr) auto;
       grid-template-areas: "controls preview" "controls output";
     }
-    .controls { grid-area: controls; overflow-y: auto; }
+    .controls { grid-area: controls; overflow-y: auto; scrollbar-gutter: stable; }
     .preview { grid-area: preview; }
     .output { grid-area: output; }
-    .editor-study__stage { min-height: 0; }
+    .editor-study__stage { min-height: 0; padding: var(--nx-space-2); }
   }
 </style>
