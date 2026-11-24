@@ -9,7 +9,9 @@
   let { work, galleryHref, galleryIndexHref } = $props();
   const surface = surfaceFromPreset("sticker-50");
   const area = printableArea(surface);
-  let selection = $state(formatFrame(work, "original", surface));
+  // Derive the initial frame from the reactive work prop; edits override it.
+  let editedSelection = $state(null);
+  let selection = $derived(editedSelection ?? formatFrame(work, "original", surface));
   let formatId = $derived(selection.formatId);
   let studyHref = $state("");
   let stage;
@@ -32,7 +34,7 @@
 
   function chooseFormat(id) {
     if (drag) return;
-    selection = formatFrame(work, id, surface);
+    editedSelection = formatFrame(work, id, surface);
     writeSelection(selection);
   }
 
@@ -49,15 +51,15 @@
     if (!drag || drag.pointerId !== event.pointerId) return;
     const dx = (event.clientX - drag.startX) / drag.bounds.width;
     const dy = (event.clientY - drag.startY) / drag.bounds.height;
-    if (!dx && !dy) { selection = drag.initial; return; }
-    selection = customSelection(resizeCorner(drag.initial.frame, drag.corner, dx, dy, area), surface);
+    if (!dx && !dy) { editedSelection = drag.initial; return; }
+    editedSelection = customSelection(resizeCorner(drag.initial.frame, drag.corner, dx, dy, area), surface);
   }
 
   function finishResize(event, cancel = false) {
     if (!drag || drag.pointerId !== event.pointerId) return;
     const initial = drag.initial;
     drag = null;
-    if (cancel) selection = initial;
+    if (cancel) editedSelection = initial;
     else if (selection.formatId === "custom") writeSelection(selection);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -70,7 +72,7 @@
     if (!direction || drag) return;
     event.preventDefault();
     const step = event.shiftKey ? 0.05 : 0.01;
-    selection = customSelection(resizeCorner(selection.frame, corner, direction[0] * step, direction[1] * step, area), surface);
+    editedSelection = customSelection(resizeCorner(selection.frame, corner, direction[0] * step, direction[1] * step, area), surface);
     writeSelection(selection);
   }
 
@@ -78,7 +80,7 @@
     // Browser URL is authoritative for the statically generated Create route.
     function restoreFormat() {
       drag = null;
-      selection = restoreSelection(work, window.location.search, surface);
+      editedSelection = restoreSelection(work, window.location.search, surface);
       syncStudyLink(window.location.search);
     }
     restoreFormat();
@@ -254,7 +256,7 @@
   /* Size the SVG within both axes of the available stage. */
   .editor-study__stage {
     display: grid; place-items: center;
-    padding: var(--nx-space-3);
+    padding: max(var(--nx-space-3), var(--nx-touch-min));
     min-height: min(40dvh, 18rem);
     background: color-mix(in srgb, var(--nx-color-ink) 5%, var(--nx-color-canvas));
     container-type: size;
@@ -266,6 +268,7 @@
   }
   .editor-study__painting {
     position: absolute;
+    container-type: size;
     outline: var(--nx-stroke-armature) solid var(--nx-color-muted);
     background: var(--white, var(--nx-color-paper));
   }
@@ -273,7 +276,8 @@
   .resize-handle {
     position: absolute; z-index: 1;
     width: var(--nx-touch-min); height: var(--nx-touch-min);
-    touch-action: none; transform: translate(-50%, -50%);
+    --handle-x: -50%; --handle-y: -50%;
+    touch-action: none; transform: translate(var(--handle-x), var(--handle-y));
     display: grid; place-items: center;
   }
   .resize-handle.nw { top: 0; left: 0; cursor: nwse-resize; }
@@ -302,12 +306,31 @@
   button:disabled, select:disabled { cursor: not-allowed; opacity: 1; }
   button.resize-handle:not(:disabled) { padding: 0; border: 0; background: transparent; }
   button.resize-handle::after {
-    content: ""; width: 12px; height: 12px;
+    content: ""; position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%); width: 12px; height: 12px;
     background: var(--nx-color-paper); border: 2px solid var(--nx-color-ink);
     box-sizing: border-box;
   }
   button.resize-handle.nw:not(:disabled), button.resize-handle.se:not(:disabled) { cursor: nwse-resize; }
   button.resize-handle.ne:not(:disabled), button.resize-handle.sw:not(:disabled) { cursor: nesw-resize; }
+  button.resize-handle:focus-visible { z-index: 2; }
+  /* When a frame is narrow or short, shift hit targets outward without
+     moving the visible corner markers or reducing the 44px targets. */
+  @container (width < 44px) {
+    .resize-handle.nw, .resize-handle.sw { --handle-x: calc(-100% + 6px); }
+    .resize-handle.ne, .resize-handle.se { --handle-x: -6px; }
+    button.resize-handle.nw::after, button.resize-handle.sw::after { left: calc(100% - 6px); }
+    button.resize-handle.ne::after, button.resize-handle.se::after { left: 6px; }
+  }
+  @container (height < 44px) {
+    .resize-handle.nw, .resize-handle.ne { --handle-y: calc(-100% + 6px); }
+    .resize-handle.sw, .resize-handle.se { --handle-y: -6px; }
+    button.resize-handle.nw::after, button.resize-handle.ne::after { top: calc(100% - 6px); }
+    button.resize-handle.sw::after, button.resize-handle.se::after { top: 6px; }
+  }
+  @media print {
+    button.resize-handle { display: none; }
+  }
   .range-preview { display: grid; width: 100%; }
   .range-preview input { min-height: var(--nx-touch-min); width: 100%; margin: 0; accent-color: var(--nx-color-ink); }
   .print { margin-inline-start: auto; border-color: var(--nx-color-ink); }
@@ -324,6 +347,6 @@
     .controls { grid-area: controls; overflow-y: auto; scrollbar-gutter: stable; }
     .preview { grid-area: preview; }
     .output { grid-area: output; }
-    .editor-study__stage { min-height: 0; padding: var(--nx-space-2); }
+    .editor-study__stage { min-height: 0; padding: max(var(--nx-space-2), var(--nx-touch-min)); }
   }
 </style>
