@@ -1,10 +1,13 @@
 <script>
   import { deriveRenderPlan, renderSvg } from "@mondrian/matrix";
 
+  // Receive the measured work from Astro; matrix owns geometry and SVG generation.
   let { work } = $props();
   let svg = $derived(renderSvg(deriveRenderPlan(work)));
+  // Preserve the source aspect ratio when the viewport changes.
   let ratio = $derived(work.canvas.width / work.canvas.height);
 
+  // Each group describes a menu title and its options. Nested each blocks render the controls.
   // Presentation only. Editing behavior belongs to subsequent scoped PRs.
   const groups = [
     { title: "Surface", options: ["Sticker 50 × 50 mm", "Sticker 70 × 70 mm", "Sticker 100 × 70 mm", "A6", "A5", "A4", "Landscape", "Digital square", "Digital 4:5", "Digital 16:9", "Digital 9:16", "Custom surface"] },
@@ -15,6 +18,7 @@
   ];
 </script>
 
+<!-- Named sections associate their visible headings with assistive technology. -->
 <section class="editor-study" aria-labelledby="editor-title">
   <header class="editor-study__header">
     <p class="eyebrow">Create · Editor</p>
@@ -22,18 +26,22 @@
     <p>{work.title} · {work.year}</p>
     <p class="notice">Layout preview — editing and output controls are not available yet.</p>
   </header>
+  <!-- Keep the preview first in DOM order for the narrow-screen layout. -->
   <div class="workspace">
     <section class="preview" aria-labelledby="preview-title">
       <div class="preview-heading">
         <h2 id="preview-title">Your composition</h2>
+        <!-- History controls remain disabled until their behavior is implemented. -->
         <div class="actions">
           {#each ["Undo", "Reset", "Hold to compare"] as action}
             <button type="button" disabled>{action}</button>
           {/each}
         </div>
       </div>
+      <!-- Stage centers the painting; the custom property passes its ratio to CSS. -->
       <div class="editor-study__stage">
         <div class="editor-study__painting" style:--work-ratio={ratio}>
+          <!-- Render SVG produced by the existing matrix package. -->
           {@html svg}
         </div>
       </div>
@@ -41,6 +49,7 @@
     </section>
     <aside class="controls" aria-labelledby="controls-title">
       <h2 id="controls-title">Composition tools</h2>
+      <!-- Native disclosure elements support mouse and keyboard without extra JS. -->
       <details open>
         <summary>Texture</summary>
         <div class="group-content">
@@ -49,6 +58,7 @@
           <button type="button" disabled>Choose texture</button>
         </div>
       </details>
+      <!-- Generate one disclosure per category and one button per option. -->
       {#each groups as group}
         <details>
           <summary>{group.title}</summary>
@@ -62,6 +72,7 @@
         </details>
       {/each}
     </aside>
+    <!-- Reserve space for sharing, export and print; Seat 7 owns output integration. -->
     <section class="output" aria-labelledby="output-title">
       <h2 id="output-title">Your personal version</h2>
       <p class="caption">Sharing, local drafts and export will be enabled in later stages.</p>
@@ -90,6 +101,7 @@
 </section>
 
 <style>
+  /* Shared design tokens control typography, spacing and chrome colours. */
   .editor-study {
     display: grid;
     gap: var(--nx-space-5);
@@ -117,6 +129,7 @@
     color: var(--nx-color-muted);
   }
   .eyebrow { text-transform: uppercase; letter-spacing: var(--nx-tracking-display); }
+  /* Mobile first: a single flexible column in source order. */
   .workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -130,6 +143,7 @@
     border: var(--nx-stroke-armature) solid var(--nx-color-muted);
     background: var(--nx-color-paper);
   }
+  /* Center the artwork and bound responsive padding between shared spacing tokens. */
   .editor-study__stage {
     display: grid;
     place-items: center;
@@ -137,6 +151,7 @@
     min-height: min(48dvh, 20rem);
     background: color-mix(in srgb, var(--nx-color-ink) 5%, var(--nx-color-canvas));
   }
+  /* Use the smallest width limit to fit the available space and preserve aspect ratio. */
   .editor-study__painting {
     width: min(100%, 34rem, calc(60dvh * var(--work-ratio)));
     aspect-ratio: var(--work-ratio);
@@ -144,6 +159,7 @@
     outline: var(--nx-stroke-armature) solid var(--nx-color-muted);
     background: var(--white, var(--nx-color-paper));
   }
+  /* Injected SVG markup is not scoped by Svelte; target it within the painting only. */
   .editor-study__painting :global(svg) { display: block; width: 100%; height: 100%; }
   details { border-top: var(--nx-stroke-armature) solid var(--nx-color-muted); }
   summary {
@@ -155,9 +171,12 @@
     font-weight: 600;
     overflow-wrap: anywhere;
   }
+  /* Visible keyboard focus on native disclosure controls. */
   summary:focus-visible { outline: 2px solid var(--nx-color-focus); outline-offset: 2px; }
   .group-content { display: grid; gap: var(--nx-space-2); padding-bottom: var(--nx-space-3); }
+  /* Flexbox wraps controls onto additional rows when space runs out. */
   .actions, .options { display: flex; flex-wrap: wrap; gap: var(--nx-space-2); }
+  /* Include padding and border in button sizing and reserve the shared touch target. */
   button {
     box-sizing: border-box;
     min-height: var(--nx-touch-min);
@@ -172,8 +191,10 @@
     font-size: var(--nx-text-sm);
     overflow-wrap: anywhere;
   }
+  /* Keep unavailable controls legible; HTML disabled prevents activation. */
   button:disabled { cursor: not-allowed; opacity: 1; }
   .print { justify-self: stretch; border-color: var(--nx-color-ink); }
+  /* Wider screens: place controls on the left and preview/output on the right. */
   @media (min-width: 52rem) {
     .workspace {
       grid-template-columns: minmax(15rem, 1fr) minmax(0, 2fr);
