@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { FORMATS, formatFrame, formatSearch, liquidFillSvg } from "./formats.js";
 
+  import { VARIATIONS, readVariation, variationSearch, variationWork, normalizeVariation } from "./variations.js";
   import { CORNERS, resizeCorner, customSelection, restoreSelection } from "./resize.js";
 
   // Receive the measured work from Astro; matrix owns geometry and SVG generation.
@@ -17,7 +18,18 @@
   let stage;
   let drag = null;
   const cornerLabels = { nw: "Top left", ne: "Top right", sw: "Bottom left", se: "Bottom right" };
-  let svg = $derived(liquidFillSvg(renderSvg(deriveRenderPlan(work))));
+  let variationId = $state("original");
+  let variedWork = $derived(variationWork(work, variationId));
+  let svg = $derived(liquidFillSvg(renderSvg(deriveRenderPlan(variedWork))));
+
+  function chooseVariation(id) {
+    if (drag) return;
+    variationId = normalizeVariation(id);
+    const url = new URL(window.location.href);
+    url.search = variationSearch(url.search, variationId);
+    window.history.replaceState(window.history.state, "", url);
+    syncStudyLink(url.search);
+  }
 
   function syncStudyLink(search) {
     const link = new URL(galleryHref, window.location.href);
@@ -81,6 +93,7 @@
     function restoreFormat() {
       drag = null;
       editedSelection = restoreSelection(work, window.location.search, surface);
+      variationId = readVariation(window.location.search);
       syncStudyLink(window.location.search);
     }
     restoreFormat();
@@ -89,7 +102,7 @@
   });
 
   // Each group describes a menu title and its options. Nested each blocks render the controls.
-  // Only Format is active in this increment; other controls remain placeholders.
+  // Format and geometric Variations are active; other controls remain placeholders.
   const groups = [
     { title: "Surface", options: ["Sticker 50 × 50 mm", "Sticker 70 × 70 mm", "Sticker 100 × 70 mm", "A6", "A5", "A4", "Landscape", "Digital square", "Digital 4:5", "Digital 16:9", "Digital 9:16", "Custom surface"] },
     { title: "Format", options: ["Original", "1:1", "5:4", "4:5", "16:9", "9:16", "Custom"] },
@@ -105,7 +118,7 @@
     <div class="editor-title-block">
       <h1 id="editor-title">Create your composition</h1>
       <p>{work.title} · {work.year}</p>
-      <p class="notice">Drag a corner or use format controls · Other tools pending.</p>
+      <p class="notice">Drag a corner, choose a format or a variation · Other tools pending.</p>
     </div>
     <div class="preview-heading">
       <!-- History controls remain disabled until their behavior is implemented. -->
@@ -170,6 +183,14 @@
                 <button type="button" aria-pressed={formatId === "custom"} disabled>Custom</button>
               </div>
               <p class="notice" aria-live="polite">Selected: {formatId === "custom" ? "Custom" : FORMATS.find((format) => format.id === formatId)?.label}</p>
+            {:else if group.title === "Variations"}
+              <div class="options chips" role="group" aria-label="Composition variation">
+                {#each VARIATIONS as variation}
+                  <button type="button" aria-pressed={variationId === variation.id} onclick={() => chooseVariation(variation.id)}>{variation.label}</button>
+                {/each}
+                <button type="button" disabled>Invert contrast</button>
+              </div>
+              <p class="notice" aria-live="polite">Selected: {VARIATIONS.find((variation) => variation.id === variationId)?.label}</p>
             {:else if group.title === "Surface"}
               <div class="options">
                 {#each group.options as option}
