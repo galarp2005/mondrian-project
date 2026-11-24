@@ -24,14 +24,8 @@ const q = Astro.url.search;
 const galleryHref = `${withBase(`/gallery/${work.id}/`, base)}${q}`;
 ---
 <ShellLayout title={`Create ${work.title} — Neoplastix`} current="create" noindex>
-  <div style={swatchCssVars(work)}>
-    <Editor work={work} client:load />
-    <nav class="prose" aria-label="Editor navigation">
-      <p class="btn-row">
-        <a class="btn btn--primary" href={galleryHref} data-recipe-gallery-link>View SVG study</a>
-        <a class="btn btn--ghost" href={withBase("/gallery/", base)}>Gallery</a>
-      </p>
-    </nav>
+  <div class="editor-page" style={swatchCssVars(work)}>
+    <Editor work={work} galleryHref={galleryHref} galleryIndexHref={withBase("/gallery/", base)} client:load />
   </div>
 </ShellLayout>
 
@@ -44,3 +38,28 @@ const galleryHref = `${withBase(`/gallery/${work.id}/`, base)}${q}`;
     studyLink.href = studyUrl.href;
   }
 </script>
+
+<style is:global>
+  /* Limit viewport sizing to the Create route; other pages keep their existing shell. */
+  @media (min-width: 52rem) and (min-height: 35rem) {
+    body:has(.editor-page) {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      height: 100dvh;
+    }
+    body:has(.editor-page) > .shell-header,
+    body:has(.editor-page) > .shell-footer,
+    body:has(.editor-page) > .shell-main {
+      box-sizing: border-box;
+      width: 100%;
+    }
+    body:has(.editor-page) > .shell-main {
+      display: grid;
+      min-height: 0;
+      padding-block: var(--nx-space-2);
+    }
+    body:has(.editor-page) > .shell-footer { padding-block: var(--nx-space-1); }
+    .editor-page { min-height: 0; }
+    .editor-page > astro-island { display: block; height: 100%; min-height: 0; }
+  }
+</style>
