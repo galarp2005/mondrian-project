@@ -19,7 +19,8 @@
   let drag = null;
   const cornerLabels = { nw: "Top left", ne: "Top right", sw: "Bottom left", se: "Bottom right" };
   let variationId = $state("original");
-  let variedWork = $derived(variationWork(work, variationId));
+  // Matrix clones its input; unwrap Svelte reactive proxies at the boundary.
+  let variedWork = $derived(variationWork($state.snapshot(work), variationId));
   let svg = $derived(liquidFillSvg(renderSvg(deriveRenderPlan(variedWork))));
 
   function chooseVariation(id) {
