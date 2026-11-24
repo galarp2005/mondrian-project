@@ -1,14 +1,14 @@
 # Seat 6 — U6-T2 corner resize
-Status: initial implementation passed author-run automated checks on 2026-11-24; manual drag reported working. Svelte warning fix and small-frame touch-target adjustment committed; verification of the revised code and targeted browser QA remain pending. Stacked on PR 3 at 418fd2c; reconcile after predecessors merge. Branch issue-6 is seat identifier, not verified issue number.
+Status: initial implementation passed author-run automated checks on 2026-11-24; manual drag reported working. Follow-up fixes passed author-run checks and author reports final manual checklist complete on 2026-11-24; predecessor integration and human cross-lane review pending. Stacked on PR 3 at 418fd2c; reconcile after predecessors merge. Branch issue-6 is seat identifier, not verified issue number.
 
 ## Scope
 D-30/D-31 amended MVP spec governs over obsolete aspect-locked M6 instruction. Four outer corners only, free aspect, fixed opposite corner, pointer capture and second pointer ignored, 44px touch targets, keyboard arrows, bounds and minimum size. Liquid-fill remains unchanged. Custom frame round-trips through fmt/fx/fy/fw/fh; selecting a preset re-maximizes. Use a stable provisional square coordinate stage for sticker-50; actual paper appearance and selectable surfaces await Seat 7. Minimum proposed 10% of printable width/height (implementation choice, not mandated numeric threshold). No internal drag, Matrix edits, history or output changes.
 
 ## Acceptance
-- [ ] Author reports corner drag works and can enlarge a wide composition vertically; geometry tests pass for all four corners and opposite anchor. Explicit browser verification of all corners and internal non-drag remains unrecorded.
-- [ ] Bounds/minimum geometry tests pass; author reports maximum reached at approximately original size, consistent with provisional square surface. Pointer cancellation, keyboard/mobile and overlapping touch targets still require explicit browser QA.
-- [ ] Custom URL round-trip and preset restoration unit tests pass; explicit browser reload evidence not recorded.
-- [x] Author ran pnpm check on 40f7d34: 84/84 unit tests, build and conformance passed. Browser regressions and compiler warning remain separate pending items.
+- [x] Author reports final manual checklist complete, including minimum-size handles and internal non-drag; geometry tests pass for all four corners and opposite anchor.
+- [x] Bounds/minimum geometry tests pass; author reports final minimum-size, keyboard and mobile checklist complete. Pointer cancellation/multi-pointer behavior not separately evidenced.
+- [x] Custom URL round-trip and preset restoration unit tests pass; author reports final reload and Original restoration checks complete.
+- [x] Author ran pnpm check on 40f7d34: 84/84 unit tests, build and conformance passed. Revised run also passed; previous Svelte warning absent from supplied dev-server excerpt.
 - [ ] Human cross-lane review and integration after predecessor merges.
 
 Declaration delta: none. Measurement source: existing work geometry.
@@ -22,7 +22,7 @@ Declaration delta: none. Measurement source: existing work geometry.
 | ChatGPT — custom geometry URL persistence and preset restoration | ACCEPT — included in requested implementation | Automated helper tests passed; browser reload evidence pending |
 | ChatGPT — add 17 resize tests | ACCEPT — author ran pnpm check | Yes — all 17 passed in author-provided transcript |
 
-| ChatGPT — derive initial selection from work, offset overlapping corner hit targets on small frames, hide handles in print CSS | ACCEPT — author requested fixes before submission | Pending revised build and browser verification |
+| ChatGPT — derive initial selection from work, offset overlapping corner hit targets on small frames, hide handles in print CSS | ACCEPT — author requested fixes before submission | Yes — revised automated run passed and author reports final manual checklist complete; final print/export integration pending |
 
 Author review of this draft log required before submission. No independent browser run, cross-lane approval or AI approval/merge claimed.
 
@@ -34,3 +34,6 @@ A fixed square coordinate container maps normalized frame x/y/width/height to CS
 
 ## Follow-up fixes
 Commit 4ed500923fd4ed9e5b60cbf089e2a26dc826bdec changes Editor.svelte only: derived initial selection with nullable edited state, outward hit-target offsets for frames narrower/shorter than 44px, reserved stage padding and print-only handle hiding. Previous 84-test run predates these changes; rerun pnpm check and confirm the compiler warning is gone. Browser QA: resize all corners, minimum size on mobile, keyboard arrows, internal non-drag, custom URL reload and original reset. Print CSS hides editing handles but final Seat 7 print/export output still needs integration verification.
+
+## Final verification — 2026-11-24
+Author supplied revised terminal output: 84/84 unit tests (editor 46 including 17 resize tests), Astro 28 pages, build assertions and conformance OK. Development server started and Create returned HTTP 200; previous Svelte warning not present in supplied excerpt. This run followed the update instructions for 46dc5d8, although the pasted excerpt does not include the commit line itself. Author subsequently confirmed completion of the final manual checklist (minimum-size handles, custom reload, Original, internal non-drag, keyboard and mobile); no independent browser run or individual screenshots claimed. Pointer cancellation and second-pointer handling still lack targeted browser evidence. Final physical paper/print/export verification awaits Seat 7 integration. Reconcile stacked branches, confirm naming and human reviewer, rerun checks against main before submission. No AI approval or merge.
