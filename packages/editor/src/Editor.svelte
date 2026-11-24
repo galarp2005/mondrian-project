@@ -1,14 +1,20 @@
 <script>
-  import { deriveRenderPlan, renderSvg } from "@mondrian/matrix";
+  import { deriveRenderPlan, renderSvg, printableArea, surfaceFromPreset } from "@mondrian/matrix";
   import { onMount } from "svelte";
-  import { FORMATS, readFormat, formatFrame, formatSearch, liquidFillSvg } from "./formats.js";
+  import { FORMATS, formatFrame, formatSearch, liquidFillSvg } from "./formats.js";
+
+  import { CORNERS, resizeCorner, customSelection, restoreSelection } from "./resize.js";
 
   // Receive the measured work from Astro; matrix owns geometry and SVG generation.
   let { work, galleryHref, galleryIndexHref } = $props();
-  let formatId = $state("original");
+  const surface = surfaceFromPreset("sticker-50");
+  const area = printableArea(surface);
+  let selection = $state(formatFrame(work, "original", surface));
+  let formatId = $derived(selection.formatId);
   let studyHref = $state("");
-  let selection = $derived(formatFrame(work, formatId));
-  let ratio = $derived(selection.aspect);
+  let stage;
+  let drag = null;
+  const cornerLabels = { nw: "Top left", ne: "Top right", sw: "Bottom left", se: "Bottom right" };
   let svg = $derived(liquidFillSvg(renderSvg(deriveRenderPlan(work))));
 
   function syncStudyLink(search) {
@@ -17,19 +23,62 @@
     studyHref = link.href;
   }
 
-  function chooseFormat(id) {
-    const next = formatFrame(work, id);
-    formatId = next.formatId;
+  function writeSelection(next) {
     const url = new URL(window.location.href);
     url.search = formatSearch(url.search, next);
     window.history.replaceState(window.history.state, "", url);
     syncStudyLink(url.search);
   }
 
+  function chooseFormat(id) {
+    if (drag) return;
+    selection = formatFrame(work, id, surface);
+    writeSelection(selection);
+  }
+
+  function startResize(event, corner) {
+    if (drag || event.button !== 0) return;
+    const bounds = stage.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag = { pointerId: event.pointerId, corner, startX: event.clientX,
+      startY: event.clientY, bounds, initial: $state.snapshot(selection) };
+  }
+
+  function moveResize(event) {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const dx = (event.clientX - drag.startX) / drag.bounds.width;
+    const dy = (event.clientY - drag.startY) / drag.bounds.height;
+    if (!dx && !dy) { selection = drag.initial; return; }
+    selection = customSelection(resizeCorner(drag.initial.frame, drag.corner, dx, dy, area), surface);
+  }
+
+  function finishResize(event, cancel = false) {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const initial = drag.initial;
+    drag = null;
+    if (cancel) selection = initial;
+    else if (selection.formatId === "custom") writeSelection(selection);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  function resizeByKey(event, corner) {
+    const directions = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const direction = directions[event.key];
+    if (!direction || drag) return;
+    event.preventDefault();
+    const step = event.shiftKey ? 0.05 : 0.01;
+    selection = customSelection(resizeCorner(selection.frame, corner, direction[0] * step, direction[1] * step, area), surface);
+    writeSelection(selection);
+  }
+
   onMount(() => {
     // Browser URL is authoritative for the statically generated Create route.
     function restoreFormat() {
-      formatId = readFormat(window.location.search);
+      drag = null;
+      selection = restoreSelection(work, window.location.search, surface);
       syncStudyLink(window.location.search);
     }
     restoreFormat();
@@ -54,7 +103,7 @@
     <div class="editor-title-block">
       <h1 id="editor-title">Create your composition</h1>
       <p>{work.title} · {work.year}</p>
-      <p class="notice">Format controls available · Other editing and output tools pending.</p>
+      <p class="notice">Drag a corner or use format controls · Other tools pending.</p>
     </div>
     <div class="preview-heading">
       <!-- History controls remain disabled until their behavior is implemented. -->
@@ -73,11 +122,26 @@
   <div class="workspace">
     <section class="preview" aria-labelledby="preview-title">
       <h2 id="preview-title" class="visually-hidden">Your composition</h2>
-      <!-- Stage centers the painting; the custom property passes its ratio to CSS. -->
+      <!-- Stable normalized coordinate space; Seat 7 will integrate physical paper. -->
       <div class="editor-study__stage">
-        <div class="editor-study__painting" style:--work-ratio={ratio}>
-          <!-- Render SVG produced by the existing matrix package. -->
-          {@html svg}
+        <div class="resize-space" bind:this={stage}>
+          <div class="editor-study__painting"
+            style:left={selection.frame.x * 100 + "%"}
+            style:top={selection.frame.y * 100 + "%"}
+            style:width={selection.frame.width * 100 + "%"}
+            style:height={selection.frame.height * 100 + "%"}>
+            {@html svg}
+            {#each CORNERS as corner}
+              <button type="button" class={"resize-handle " + corner}
+                aria-label={"Resize " + cornerLabels[corner] + " corner with arrow keys"}
+                onpointerdown={(event) => startResize(event, corner)}
+                onpointermove={moveResize}
+                onpointerup={(event) => { moveResize(event); finishResize(event); }}
+                onpointercancel={(event) => finishResize(event, true)}
+                onlostpointercapture={(event) => finishResize(event, true)}
+                onkeydown={(event) => resizeByKey(event, corner)}></button>
+            {/each}
+          </div>
         </div>
       </div>
     </section>
@@ -101,9 +165,9 @@
                 {#each FORMATS as format}
                   <button type="button" aria-pressed={formatId === format.id} onclick={() => chooseFormat(format.id)}>{format.label}</button>
                 {/each}
-                <button type="button" disabled>Custom</button>
+                <button type="button" aria-pressed={formatId === "custom"} disabled>Custom</button>
               </div>
-              <p class="notice" aria-live="polite">Selected: {FORMATS.find((format) => format.id === formatId)?.label}</p>
+              <p class="notice" aria-live="polite">Selected: {formatId === "custom" ? "Custom" : FORMATS.find((format) => format.id === formatId)?.label}</p>
             {:else if group.title === "Surface"}
               <div class="options">
                 {#each group.options as option}
@@ -195,14 +259,27 @@
     background: color-mix(in srgb, var(--nx-color-ink) 5%, var(--nx-color-canvas));
     container-type: size;
   }
+  .resize-space {
+    position: relative;
+    width: min(100%, 40rem, 100cqh);
+    aspect-ratio: 1;
+  }
   .editor-study__painting {
-    width: min(100%, 40rem, calc(100cqh * var(--work-ratio)));
-    aspect-ratio: var(--work-ratio);
-    overflow: hidden;
+    position: absolute;
     outline: var(--nx-stroke-armature) solid var(--nx-color-muted);
     background: var(--white, var(--nx-color-paper));
   }
   .editor-study__painting :global(svg) { display: block; width: 100%; height: 100%; }
+  .resize-handle {
+    position: absolute; z-index: 1;
+    width: var(--nx-touch-min); height: var(--nx-touch-min);
+    touch-action: none; transform: translate(-50%, -50%);
+    display: grid; place-items: center;
+  }
+  .resize-handle.nw { top: 0; left: 0; cursor: nwse-resize; }
+  .resize-handle.ne { top: 0; left: 100%; cursor: nesw-resize; }
+  .resize-handle.sw { top: 100%; left: 0; cursor: nesw-resize; }
+  .resize-handle.se { top: 100%; left: 100%; cursor: nwse-resize; }
   details { border-top: var(--nx-stroke-armature) solid var(--nx-color-muted); }
   summary { box-sizing: border-box; min-height: var(--nx-touch-min); padding: var(--nx-space-2); cursor: pointer; }
   summary:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid var(--nx-color-focus); outline-offset: 2px; }
@@ -223,6 +300,14 @@
   button:not(:disabled) { cursor: pointer; color: var(--nx-color-ink); }
   button[aria-pressed="true"] { background: var(--nx-color-ink); color: var(--nx-color-canvas); border-color: var(--nx-color-ink); }
   button:disabled, select:disabled { cursor: not-allowed; opacity: 1; }
+  button.resize-handle:not(:disabled) { padding: 0; border: 0; background: transparent; }
+  button.resize-handle::after {
+    content: ""; width: 12px; height: 12px;
+    background: var(--nx-color-paper); border: 2px solid var(--nx-color-ink);
+    box-sizing: border-box;
+  }
+  button.resize-handle.nw:not(:disabled), button.resize-handle.se:not(:disabled) { cursor: nwse-resize; }
+  button.resize-handle.ne:not(:disabled), button.resize-handle.sw:not(:disabled) { cursor: nesw-resize; }
   .range-preview { display: grid; width: 100%; }
   .range-preview input { min-height: var(--nx-touch-min); width: 100%; margin: 0; accent-color: var(--nx-color-ink); }
   .print { margin-inline-start: auto; border-color: var(--nx-color-ink); }
