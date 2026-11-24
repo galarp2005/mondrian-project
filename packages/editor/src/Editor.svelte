@@ -4,6 +4,7 @@
   import { FORMATS, formatFrame, formatSearch, liquidFillSvg } from "./formats.js";
 
   import { VARIATIONS, readVariation, variationSearch, variationWork, normalizeVariation } from "./variations.js";
+  import { HUE_PRESETS, WEIGHT_PRESETS, colourState, readColour, colourSearch, togglePalette, lineWeightMax, invertedNeutral } from "./colour.js";
   import { CORNERS, resizeCorner, customSelection, restoreSelection } from "./resize.js";
 
   // Receive the measured work from Astro; matrix owns geometry and SVG generation.
@@ -21,7 +22,23 @@
   let variationId = $state("original");
   // Matrix clones its input; unwrap Svelte reactive proxies at the boundary.
   let variedWork = $derived(variationWork($state.snapshot(work), variationId));
-  let svg = $derived(liquidFillSvg(renderSvg(deriveRenderPlan(variedWork))));
+  let editedColour = $state(null);
+  let colour = $derived(colourState(variedWork, editedColour ?? {}));
+  let maxWeight = $derived(lineWeightMax(variedWork));
+  let svg = $derived(liquidFillSvg(renderSvg(deriveRenderPlan(variedWork, colour.lineWeightScale))));
+
+  function changeColour(patch) {
+    if (drag) return;
+    editedColour = colourState(variedWork, { ...colour, ...patch });
+    const url = new URL(window.location.href);
+    url.search = colourSearch(url.search, editedColour);
+    window.history.replaceState(window.history.state, "", url);
+    syncStudyLink(url.search);
+  }
+
+  function toggleInversion() {
+    changeColour({ paletteMode: togglePalette(colour.paletteMode) });
+  }
 
   function chooseVariation(id) {
     if (drag) return;
@@ -95,6 +112,7 @@
       drag = null;
       editedSelection = restoreSelection(work, window.location.search, surface);
       variationId = readVariation(window.location.search);
+      editedColour = readColour(variedWork, window.location.search);
       syncStudyLink(window.location.search);
     }
     restoreFormat();
@@ -103,7 +121,7 @@
   });
 
   // Each group describes a menu title and its options. Nested each blocks render the controls.
-  // Format and geometric Variations are active; other controls remain placeholders.
+  // Format, geometric Variations and Colour and lines are active.
   const groups = [
     { title: "Surface", options: ["Sticker 50 × 50 mm", "Sticker 70 × 70 mm", "Sticker 100 × 70 mm", "A6", "A5", "A4", "Landscape", "Digital square", "Digital 4:5", "Digital 16:9", "Digital 9:16", "Custom surface"] },
     { title: "Format", options: ["Original", "1:1", "5:4", "4:5", "16:9", "9:16", "Custom"] },
@@ -119,7 +137,7 @@
     <div class="editor-title-block">
       <h1 id="editor-title">Create your composition</h1>
       <p>{work.title} · {work.year}</p>
-      <p class="notice">Drag a corner, choose a format or a variation · Other tools pending.</p>
+      <p class="notice">Drag a corner, choose a format, variation or colour · Other tools pending.</p>
     </div>
     <div class="preview-heading">
       <!-- History controls remain disabled until their behavior is implemented. -->
@@ -145,7 +163,14 @@
             style:left={selection.frame.x * 100 + "%"}
             style:top={selection.frame.y * 100 + "%"}
             style:width={selection.frame.width * 100 + "%"}
-            style:height={selection.frame.height * 100 + "%"}>
+            style:height={selection.frame.height * 100 + "%"}
+            style:--theta={colour.theta + "deg"}
+            style:--theta-num={colour.theta}
+            style:--line-weight-scale={colour.lineWeightScale}
+            class:inverted={colour.paletteMode === "inverted"}
+            style:--inverted-black={invertedNeutral("black")}
+            style:--inverted-white={invertedNeutral("white")}
+            style:--inverted-gray={invertedNeutral("gray")}>
             {@html svg}
             {#each CORNERS as corner}
               <button type="button" class={"resize-handle " + corner}
@@ -189,9 +214,33 @@
                 {#each VARIATIONS as variation}
                   <button type="button" aria-pressed={variationId === variation.id} onclick={() => chooseVariation(variation.id)}>{variation.label}</button>
                 {/each}
-                <button type="button" disabled>Invert contrast</button>
+                <button type="button" aria-pressed={colour.paletteMode === "inverted"} onclick={toggleInversion}>Invert contrast</button>
               </div>
               <p class="notice" aria-live="polite">Selected: {VARIATIONS.find((variation) => variation.id === variationId)?.label}</p>
+            {:else if group.title === "Colour and lines"}
+              <label class="range-preview">
+                Hue · {colour.theta}°
+                <input type="range" min="0" max="359" step="1" value={colour.theta}
+                  oninput={(event) => changeColour({ theta: Number(event.currentTarget.value) })} />
+              </label>
+              <div class="options chips" role="group" aria-label="Hue presets">
+                {#each HUE_PRESETS as hue}
+                  <button type="button" aria-pressed={colour.theta === hue} onclick={() => changeColour({ theta: hue })}>{hue}°</button>
+                {/each}
+              </div>
+              <button type="button" aria-pressed={colour.paletteMode === "inverted"} onclick={toggleInversion}>Invert palette</button>
+              <label class="range-preview">
+                Line weight · {colour.lineWeightScale.toFixed(2)}×
+                <input type="range" min="0.25" max={maxWeight} step="any" value={colour.lineWeightScale}
+                  oninput={(event) => changeColour({ lineWeightScale: Number(event.currentTarget.value) })} />
+              </label>
+              <div class="options chips" role="group" aria-label="Line weight presets">
+                {#each WEIGHT_PRESETS as weight}
+                  <button type="button" disabled={weight > maxWeight} aria-pressed={Math.abs(colour.lineWeightScale - weight) < 1e-9} onclick={() => changeColour({ lineWeightScale: weight })}>{weight}×</button>
+                {/each}
+                <button type="button" aria-pressed={Math.abs(colour.lineWeightScale - maxWeight) < 1e-9} onclick={() => changeColour({ lineWeightScale: maxWeight })}>Max</button>
+              </div>
+              <p class="notice">Maximum safe line weight: {maxWeight.toFixed(2)}×</p>
             {:else if group.title === "Surface"}
               <div class="options">
                 {#each group.options as option}
@@ -295,6 +344,20 @@
     background: var(--white, var(--nx-color-paper));
   }
   .editor-study__painting :global(svg) { display: block; width: 100%; height: 100%; }
+  /* Explicit HSL involution on top of Matrix's hue rotation; never filter the artwork. */
+  .inverted :global(.plane[data-role="red"]) {
+    fill: hsl(calc(var(--swatch-red-h) + var(--theta-num) + 180) var(--swatch-red-s) calc(100% - var(--swatch-red-l)));
+  }
+  .inverted :global(.plane[data-role="yellow"]) {
+    fill: hsl(calc(var(--swatch-yellow-h) + var(--theta-num) + 180) var(--swatch-yellow-s) calc(100% - var(--swatch-yellow-l)));
+  }
+  .inverted :global(.plane[data-role="blue"]) {
+    fill: hsl(calc(var(--swatch-blue-h) + var(--theta-num) + 180) var(--swatch-blue-s) calc(100% - var(--swatch-blue-l)));
+  }
+  .inverted :global(.plane[data-role="black"]), .inverted :global(.line) { fill: var(--inverted-black); }
+  .inverted :global(.plane[data-role="white"]) { fill: var(--inverted-white); }
+  .inverted :global(.plane[data-role="gray"]) { fill: var(--inverted-gray); }
+  .editor-study__painting.inverted { background: var(--inverted-white); }
   .resize-handle {
     position: absolute; z-index: 1;
     width: var(--nx-touch-min); height: var(--nx-touch-min);
