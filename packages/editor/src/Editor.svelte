@@ -1,14 +1,44 @@
 <script>
   import { deriveRenderPlan, renderSvg } from "@mondrian/matrix";
+  import { onMount } from "svelte";
+  import { FORMATS, readFormat, formatFrame, formatSearch, liquidFillSvg } from "./formats.js";
 
   // Receive the measured work from Astro; matrix owns geometry and SVG generation.
   let { work, galleryHref, galleryIndexHref } = $props();
-  let svg = $derived(renderSvg(deriveRenderPlan(work)));
-  // Preserve the source aspect ratio when the viewport changes.
-  let ratio = $derived(work.canvas.width / work.canvas.height);
+  let formatId = $state("original");
+  let studyHref = $state("");
+  let selection = $derived(formatFrame(work, formatId));
+  let ratio = $derived(selection.aspect);
+  let svg = $derived(liquidFillSvg(renderSvg(deriveRenderPlan(work))));
+
+  function syncStudyLink(search) {
+    const link = new URL(galleryHref, window.location.href);
+    link.search = search;
+    studyHref = link.href;
+  }
+
+  function chooseFormat(id) {
+    const next = formatFrame(work, id);
+    formatId = next.formatId;
+    const url = new URL(window.location.href);
+    url.search = formatSearch(url.search, next);
+    window.history.replaceState(window.history.state, "", url);
+    syncStudyLink(url.search);
+  }
+
+  onMount(() => {
+    // Browser URL is authoritative for the statically generated Create route.
+    function restoreFormat() {
+      formatId = readFormat(window.location.search);
+      syncStudyLink(window.location.search);
+    }
+    restoreFormat();
+    window.addEventListener("popstate", restoreFormat);
+    return () => window.removeEventListener("popstate", restoreFormat);
+  });
 
   // Each group describes a menu title and its options. Nested each blocks render the controls.
-  // Presentation only. Editing behavior belongs to subsequent scoped PRs.
+  // Only Format is active in this increment; other controls remain placeholders.
   const groups = [
     { title: "Surface", options: ["Sticker 50 × 50 mm", "Sticker 70 × 70 mm", "Sticker 100 × 70 mm", "A6", "A5", "A4", "Landscape", "Digital square", "Digital 4:5", "Digital 16:9", "Digital 9:16", "Custom surface"] },
     { title: "Format", options: ["Original", "1:1", "5:4", "4:5", "16:9", "9:16", "Custom"] },
@@ -24,7 +54,7 @@
     <div class="editor-title-block">
       <h1 id="editor-title">Create your composition</h1>
       <p>{work.title} · {work.year}</p>
-      <p class="notice">Layout preview — editing and output controls are not available yet.</p>
+      <p class="notice">Format controls available · Other editing and output tools pending.</p>
     </div>
     <div class="preview-heading">
       <!-- History controls remain disabled until their behavior is implemented. -->
@@ -34,7 +64,7 @@
         {/each}
       </div>
       <nav class="actions study-links" aria-label="Editor navigation">
-        <a href={galleryHref} data-recipe-gallery-link>View SVG study</a>
+        <a href={studyHref || galleryHref} data-recipe-gallery-link>View SVG study</a>
         <a href={galleryIndexHref}>Gallery</a>
       </nav>
     </div>
@@ -66,7 +96,15 @@
         <details>
           <summary>0{i + 2} / {group.title}</summary>
           <div class="group-content">
-            {#if group.title === "Surface"}
+            {#if group.title === "Format"}
+              <div class="options chips" role="group" aria-label="Composition format">
+                {#each FORMATS as format}
+                  <button type="button" aria-pressed={formatId === format.id} onclick={() => chooseFormat(format.id)}>{format.label}</button>
+                {/each}
+                <button type="button" disabled>Custom</button>
+              </div>
+              <p class="notice" aria-live="polite">Selected: {FORMATS.find((format) => format.id === formatId)?.label}</p>
+            {:else if group.title === "Surface"}
               <div class="options">
                 {#each group.options as option}
                   <button type="button" disabled>{option}</button>
@@ -167,7 +205,7 @@
   .editor-study__painting :global(svg) { display: block; width: 100%; height: 100%; }
   details { border-top: var(--nx-stroke-armature) solid var(--nx-color-muted); }
   summary { box-sizing: border-box; min-height: var(--nx-touch-min); padding: var(--nx-space-2); cursor: pointer; }
-  summary:focus-visible, a:focus-visible { outline: 2px solid var(--nx-color-focus); outline-offset: 2px; }
+  summary:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid var(--nx-color-focus); outline-offset: 2px; }
   .group-content { display: grid; gap: var(--nx-space-2); padding: 0 var(--nx-space-2) var(--nx-space-2); }
   .group-content select { width: 100%; min-width: 0; }
   .actions, .options { display: flex; flex-wrap: wrap; gap: var(--nx-space-1); }
@@ -182,6 +220,8 @@
     font: inherit; font-size: var(--nx-text-sm); overflow-wrap: anywhere;
   }
   .study-links a { display: inline-flex; align-items: center; color: var(--nx-color-muted); background: transparent; border-color: transparent; text-decoration: underline; }
+  button:not(:disabled) { cursor: pointer; color: var(--nx-color-ink); }
+  button[aria-pressed="true"] { background: var(--nx-color-ink); color: var(--nx-color-canvas); border-color: var(--nx-color-ink); }
   button:disabled, select:disabled { cursor: not-allowed; opacity: 1; }
   .range-preview { display: grid; width: 100%; }
   .range-preview input { min-height: var(--nx-touch-min); width: 100%; margin: 0; accent-color: var(--nx-color-ink); }
